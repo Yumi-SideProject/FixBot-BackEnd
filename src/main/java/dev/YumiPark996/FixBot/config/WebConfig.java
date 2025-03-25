@@ -3,6 +3,8 @@ package dev.YumiPark996.FixBot.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.filter.CharacterEncodingFilter;
+import org.springframework.web.servlet.config.annotation.CorsRegistry;
+import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 @Configuration
@@ -16,11 +18,19 @@ public class WebConfig implements WebMvcConfigurer {
         return filter;
     }
 
-    // 정적 리소스 설정 (React 빌드된 파일 서빙)
+    // ✅ CORS 설정
     @Override
-    public void addResourceHandlers(org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry registry) {
+    public void addCorsMappings(CorsRegistry registry) {
+        registry.addMapping("/**")
+                .allowedOrigins("https://fixbot-frontend.onrender.com") // 테스트용으로는 "*" 가능
+                .allowedMethods("*");
+    }
+
+    // 정적 리소스 서빙
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
         registry.addResourceHandler("/**")
-                .addResourceLocations("classpath:/static/") // React 앱 빌드된 파일을 서빙
+                .addResourceLocations("classpath:/static/")
                 .setCachePeriod(3600);
     }
 }
