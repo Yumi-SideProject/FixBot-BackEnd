@@ -13,8 +13,8 @@ import java.util.stream.Collectors;
 @Service
 public class VisionService {
 
-    @Value("${ai.api.gemini.endpoint}")
-    private String urlWithKey;
+    @Value("#{'${ai.api.gemini.endpoint}'.split(',')}")
+    private List<String> geminiUrls;
 
     private final RestTemplate restTemplate;
 
@@ -48,11 +48,22 @@ public class VisionService {
                     )
             );
 
-            Map<String, String> geminiResult = callWithKey(urlWithKey, geminiPayload, "gemini");
-            String finalSummary = computeConsensus(List.of(geminiResult));
-            System.out.println("✅ 최종 요약 (Consensus):\n" + finalSummary);
+            for (String urlWithKey : geminiUrls) {
+                System.out.println("🚀 Gemini 호출 시도: " + urlWithKey);
+                Map<String, String> result = callWithKey(urlWithKey, geminiPayload, "gemini");
 
-            return finalSummary;
+                String content = result.getOrDefault("result", "");
+                if (!content.isBlank()) {
+                    System.out.println("✅ Gemini 응답 성공 (키 성공)");
+                    return content;
+                } else {
+                    System.out.println("⚠️ Gemini 응답 실패, 다음 키로 시도");
+                }
+            }
+
+            // 세 개 다 실패했을 경우
+            return "⚠️ Gemini Vision API 호출이 모두 실패했습니다.";
+
         } catch (Exception e) {
             System.err.println("🔥 analyzeImage 내부 오류 발생:");
             e.printStackTrace();
