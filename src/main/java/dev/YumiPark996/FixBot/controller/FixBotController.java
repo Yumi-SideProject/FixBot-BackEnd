@@ -57,7 +57,7 @@ public class FixBotController {
             String visionSummary = null;
 
             if (imageUrl != null && !imageUrl.isBlank()) {
-                visionSummary = visionService.analyzeImage(userInput, brand, category, question, imageUrl); // 🔍 Vision 모듈 호출
+                visionSummary = visionService.analyzeImage(imageUrl); // 🔍 Vision 모듈 호출
             }
 
             String fullPrompt = String.format(

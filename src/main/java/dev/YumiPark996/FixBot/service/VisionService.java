@@ -6,7 +6,6 @@ import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
-import jakarta.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -23,14 +22,13 @@ public class VisionService {
         this.restTemplate = builder.build();
     }
 
-    private String buildPrompt(String userInput, String brand, String category, String question, String imageUrl) {
-        return imageUrl + "\n\n이 imageUrl은 supabase에 저장된 이미지의 url이야. 이 url에 접속해서 이미지를 보고 고장이 난 전자기기의 상태를 설명해줘. 아래 정보를 꼭 참고해줘\n\n"
-                + userInput + " " + brand + " " + category + " " + question;
+    private String buildPrompt(String imageUrl) {
+        return imageUrl + "\n\n이 imageUrl은 supabase에 저장된 이미지의 url이야. 이 url에 접속해서 이미지가 무엇인지 설명 및 이미지 분석해줘.";
     }
 
-    public String analyzeImage(String userInput, String brand, String category, String question, String imageUrl) {
+    public String analyzeImage(String imageUrl) {
         try {
-            String prompt = buildPrompt(userInput, brand, category, question, imageUrl);
+            String prompt = buildPrompt(imageUrl);
 
             Map<String, Object> geminiPayload = Map.of(
                     "contents", List.of(
