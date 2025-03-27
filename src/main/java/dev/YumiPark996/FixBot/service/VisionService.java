@@ -22,13 +22,13 @@ public class VisionService {
         this.restTemplate = builder.build();
     }
 
-    private String buildPrompt(String imageUrl) {
-        return imageUrl + "\n\n이 imageUrl은 supabase에 저장된 이미지의 url이야. 이 url에 접속해서 이미지가 무엇인지 설명 및 이미지 분석해줘.";
+    private String buildPrompt(String category, String imageUrl) {
+        return "너는 가전제품/전자제품 수리/고장에 도움을 주는 챗봇이야.\n\n"+ imageUrl + "\n\n이 imageUrl은 supabase에 저장된 이미지의 url이야.\n\n 이 url에 접속해서" + category + "와 관련이 있는 관점에서(대체적으로! 있음) 이미지를 철저히 분석해줘.";
     }
 
-    public String analyzeImage(String imageUrl) {
+    public String analyzeImage(String category, String imageUrl) {
         try {
-            String prompt = buildPrompt(imageUrl);
+            String prompt = buildPrompt(category, imageUrl);
 
             Map<String, Object> geminiPayload = Map.of(
                     "contents", List.of(
