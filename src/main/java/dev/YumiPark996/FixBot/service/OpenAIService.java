@@ -26,7 +26,7 @@ public class OpenAIService {
 
     public OpenAIService() {
         // ✅ FixBot 프롬프트 로드하여 system 메시지 설정
-        String systemPrompt = FixBotPromptLoader.loadPrompt();
+        String systemPrompt = FixBotPromptLoader.getFormattedPrompt("fixbot_prompt.txt", null, null, null);
         JSONObject systemMessage = new JSONObject()
                 .put("role", "system")
                 .put("content", systemPrompt);
