@@ -47,6 +47,7 @@ public class FixBotController {
     @PostMapping("/ai-response")
     public ResponseEntity<?> aiResponse(@RequestBody Map<String, Object> requestBody) {
         try {
+            String sessionId = (String) requestBody.get("sessionId");
             String userInput = (String) requestBody.get("message");
             String brand = (String) requestBody.get("brand");
             String category = (String) requestBody.get("category");
@@ -60,17 +61,7 @@ public class FixBotController {
                 visionSummary = visionService.analyzeImage(category, userInput, imageUrl); // 🔍 Vision 모듈 호출
             }
 
-            String fullPrompt = String.format(
-                    "브랜드: %s\n카테고리: %s\n세부 카테고리: %s\n질문: %s\n%s%s",
-                    brand,
-                    category,
-                    subcategory,
-                    question,
-                    visionSummary != null ? "📷 이미지 분석 결과:\n" + visionSummary + "\n" : "",
-                    userInput
-            );
-
-            String response = fixBotService.getChatbotResponse(fullPrompt);
+            String response = fixBotService.getChatbotResponse(sessionId, userInput, brand, category, subcategory, question, visionSummary);
             return ResponseEntity.ok(Map.of("answer", response));
         } catch (Exception e) {
             logger.error("🔴 AI 응답 중 오류 발생", e);

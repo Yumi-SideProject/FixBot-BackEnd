@@ -1,5 +1,6 @@
 package dev.YumiPark996.FixBot.service;
 
+import dev.YumiPark996.FixBot.config.FixBotPromptLoader;
 import dev.YumiPark996.FixBot.dto.*;
 import dev.YumiPark996.FixBot.repository.GoogleRepository;
 import dev.YumiPark996.FixBot.repository.VideoRepository;
@@ -11,34 +12,61 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 public class FixBotService {
     private final GoogleRepository googleRepository;
     private final VideoRepository videoRepository;
     private final OpenAIService openAIService;
-    private final JSONArray conversationHistory; // ✅ 대화 이력 저장
     private static final Logger logger = LoggerFactory.getLogger(FixBotService.class);
+    private final Map<String, JSONArray> sessionHistories = new ConcurrentHashMap<>();
+
 
     @Autowired
     public FixBotService(GoogleRepository googleRepository, VideoRepository videoRepository, OpenAIService openAIService) {
         this.googleRepository = googleRepository;
         this.videoRepository = videoRepository;
         this.openAIService = openAIService;
-        this.conversationHistory = new JSONArray(); // ✅ 초기화
     }
 
     // ✅ 챗봇 응답을 저장하면서 호출
-    public String getChatbotResponse(String fullPrompt) {
+    public String getChatbotResponse(String sessionId, String userInput, String brand, String category, String subcategory, String question, String visionSummary) {
         try {
-            // ✅ 사용자의 입력을 그대로 기록 (프롬프트 변형 제거)
-            conversationHistory.put(new JSONObject().put("role", "user").put("content", fullPrompt));
+            // ✅ system prompt는 매번 새로 넣어줘야 함
+            String systemPrompt = FixBotPromptLoader.getFormattedPrompt("fixbot_prompt.txt", null, null, null);
+            JSONArray conversationHistory = sessionHistories.computeIfAbsent(sessionId, k -> {
+                JSONArray arr = new JSONArray();
+                arr.put(new JSONObject().put("role", "system").put("content", systemPrompt));
+                return arr;
+            });
 
-            // ✅ OpenAI 호출
-            String response = openAIService.getChatbotResponse(fullPrompt);
+            // ✅ structuredInput: 사용자의 질문 + 컨텍스트 정리
+            String structuredInput = String.format(
+                    "브랜드: %s\n카테고리: %s\n세부 카테고리: %s\n질문: %s\n사용자 채팅: %s",
+                    brand, category, subcategory, question, userInput
+            );
 
-            // ✅ 챗봇 응답 저장
-            conversationHistory.put(new JSONObject().put("role", "assistant").put("content", response));
+            // ✅ 1. 이미지 분석 결과 먼저 (assistant 역할로)
+            if (visionSummary != null && !visionSummary.isBlank()) {
+                conversationHistory.put(new JSONObject()
+                        .put("role", "assistant")
+                        .put("content", "[이미지 분석 결과]\n" + visionSummary));
+            }
+
+            // ✅ 2. 사용자 입력 추가
+            conversationHistory.put(new JSONObject()
+                    .put("role", "user")
+                    .put("content", structuredInput));
+
+            // ✅ 3. GPT 호출 (이전 대화 포함해서)
+            String response = openAIService.getChatbotResponse(conversationHistory);
+
+            // ✅ 4. GPT 응답 저장
+            conversationHistory.put(new JSONObject()
+                    .put("role", "assistant")
+                    .put("content", response));
 
             return response;
         } catch (Exception e) {
