@@ -48,10 +48,10 @@ public class FixBotService {
                     brand, category, subcategory, question, userInput
             );
 
-            // ✅ 1. 이미지 분석 결과 먼저 (assistant 역할로)
+            // ✅ 1. 이미지 분석 결과 먼저
             if (visionSummary != null && !visionSummary.isBlank()) {
                 conversationHistory.put(new JSONObject()
-                        .put("role", "assistant")
+                        .put("role", "user")
                         .put("content", "[이미지 분석 결과]\n" + visionSummary));
             }
 
